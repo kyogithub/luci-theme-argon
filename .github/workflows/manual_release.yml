@@ -60,13 +60,12 @@ jobs:
 
       - name: Generate new tag & release
         if: steps.check_version.outputs.has_update == 'true'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           name: For openwrt official Snapshots LuCI master
           tag_name: ${{ steps.check_version.outputs.latest_release }}
-
 
   job_build_argon:
     name: Build Argon (master)

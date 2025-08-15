@@ -11,7 +11,7 @@
 #   4.Let's take [Actions]
 #
 
-name: "Auto compile with OpenWrt SDK APK"
+name: "Auto compile with OpenWrt Snapshot SDK APK"
 on:
   repository_dispatch:
   workflow_dispatch:

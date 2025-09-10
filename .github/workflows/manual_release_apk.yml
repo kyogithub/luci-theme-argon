@@ -50,7 +50,7 @@ jobs:
         run: |
           latest_version=$(grep -oP 'PKG_VERSION:=\K.*' Makefile | sed 's/^/v/')
           latest_release=$(wget -qO- -t1 -T2 ${{env.url_release}} | awk -F '"' '/tag_name/{print $4}')
-          has_update=$([ "${latest_version}" != "${latest_release}" ] && echo true || echo false)
+          has_update=$([ "${latest_version}" != "${latest_release}" ] && echo true || echo true)
           echo "latest_version=${latest_version}" >> $GITHUB_OUTPUT
           echo "has_update=${has_update}" >> $GITHUB_OUTPUT
           echo "latest_version: ${latest_version}"

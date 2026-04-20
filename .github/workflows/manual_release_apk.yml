@@ -1,16 +1,3 @@
-#
-# Copyright (c) 2022-2023 SMALLPROGRAM <https://github.com/smallprogram>
-# Description: Auto compile
-#
-
-#
-# Fork and compile the latest version yourself using Github Actions
-#   1.Into the repository of your own fork
-#   2.Into the repository [Settings]
-#   3.[Code and automation - Actions] ↓ [General] → [Workflow permissions] ↓  Check the [Read and write permissions] and [Save]
-#   4.Let's take [Actions]
-#
-
 name: "Auto compile with OpenWrt Snapshot SDK APK"
 on:
   repository_dispatch:
@@ -59,7 +46,7 @@ jobs:
 
       - name: Generate new tag & release
         if: steps.check_version.outputs.has_update == 'true'
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -131,7 +118,7 @@ jobs:
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV
 
       - name: Upload Argon (master) apks to release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v3
         if: steps.compile.outputs.status == 'success'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

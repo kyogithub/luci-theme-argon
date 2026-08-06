@@ -25,7 +25,6 @@
 {%
 	import * as fs from 'fs';
 	import { cursor } from 'uci';
-	import { rand } from 'math';
 
 	let cfg = cursor();
 

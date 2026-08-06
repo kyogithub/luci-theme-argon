@@ -19,7 +19,6 @@
 {%
 	import { readfile, access } from 'fs';
 	import { cursor } from 'uci';
-	import { srand } from 'math';
 	import { getuid, getspnam } from 'luci.core';
 
 	const boardinfo = ubus.call("system", "board");
@@ -30,7 +29,6 @@
 	//send as HTML5
 	http.prepare_content('text/html; charset=UTF-8');
 
-	srand(+substr(reverse(time() + ""), 0, 8));
 
 	//Custom settings
 	let mode = 'normal';

@@ -28,7 +28,7 @@ jobs:
       has_update: ${{ steps.check_version.outputs.has_update }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: "master"
@@ -73,14 +73,14 @@ jobs:
     runs-on: ubuntu-24.04-arm
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
           ref: "master"
 
       - name: Setup OpenWrt SDK Cache
         id: cache-sdk
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.SDK_PATH }}
           key: openwrt-sdk-snapshot-x86-64-${{ github.sha }}

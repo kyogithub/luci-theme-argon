@@ -61,7 +61,7 @@ jobs:
     name: Build Argon (master)
     needs: job_check
     if: needs.job_check.outputs.has_update == 'true'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5

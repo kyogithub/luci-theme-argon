@@ -130,7 +130,7 @@ jobs:
           make package/luci-theme-argon/{clean,compile} -j$(nproc)
           
           if [ -d "bin/packages/x86_64/base" ]; then
-            cp -r bin/packages/x86_64/base/* ../
+            cp -r bin/packages/x86_64/base ../
             echo "status=success" >> $GITHUB_OUTPUT
             echo "FIRMWARE=$PWD" >> $GITHUB_ENV
           else

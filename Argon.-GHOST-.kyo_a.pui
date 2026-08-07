@@ -1,6 +1,8 @@
 [Folders]
-.+AFw-="1"
-.+AFw- - htdocs="1"
+.+AFw- - htdocs=1
+.+AFw- - .github=1
+.+AFw- - .github - workflows=1
+.+AFw-=1
 
 [Open Files]
 Active File Display Mode=1
@@ -16,6 +18,5 @@ Open File1=".\.github\workflows\manual_release_apk_v2.yml"
 Remember Files=1
 
 [Project Information]
-Project Start="EA070800050007000E001700120000003C"
-Working Time="13"
-
+Project Start=EA070800050007000E001700120000003C
+Working Time=13

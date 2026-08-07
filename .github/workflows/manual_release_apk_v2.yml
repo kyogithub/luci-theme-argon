@@ -44,7 +44,7 @@ jobs:
           # Obtener última versión release
           latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "v0.0.0"')
           
-          # Comparar versiones (siempre que sean diferentes, hay update)
+          # Comparar versiones
           if [ "$latest_version" != "$latest_release" ]; then
             has_update="true"
           else
@@ -56,15 +56,6 @@ jobs:
           echo "latest_version: ${latest_version}"
           echo "latest_release: ${latest_release}"
           echo "has_update: ${has_update}"
-
-      - name: Generate new tag & release
-        if: steps.check_version.outputs.has_update == 'true'
-        uses: softprops/action-gh-release@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          name: For openwrt official Snapshots LuCI master
-          tag_name: ${{steps.check_version.outputs.latest_version}}
 
   job_build_argon:
     name: Build Argon (master)
@@ -138,12 +129,32 @@ jobs:
           fi
           rm -f .config .config.old
 
+      - name: Create and Push Tag
+        id: create_tag
+        run: |
+          TAG_VERSION="${{needs.job_check.outputs.argon_version}}"
+          
+          # Verificar si el tag existe
+          if git rev-parse "$TAG_VERSION" >/dev/null 2>&1; then
+            echo "Tag already exists, skipping creation"
+          else
+            # Crear el tag localmente
+            git tag -a "$TAG_VERSION" -m "Release $TAG_VERSION for OpenWrt Argon"
+            
+            # Empujar el tag al remoto
+            git push origin "$TAG_VERSION"
+          fi
+          
+          echo "tag_created=true" >> $GITHUB_OUTPUT
+          echo "TAG_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v3
-        if: steps.compile.outputs.status == 'success'
+        if: steps.create_tag.outputs.tag_created == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{needs.job_check.outputs.argon_version}}
+          name: For openwrt official Snapshots LuCI master
+          tag_name: ${{env.TAG_VERSION}}
           files: base/luci-theme*.apk
           fail_on_unmatched_files: true

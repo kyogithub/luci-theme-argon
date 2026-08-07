@@ -20,9 +20,9 @@ env:
 
 jobs:
   job_check:
-    if: github.repository == ${{ github.repository }}
+    if: github.repository == 'kyogithub/luci-theme-argon'
     name: Check Version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     outputs:
       argon_version: ${{ steps.check_version.outputs.latest_version }}
       has_update: ${{ steps.check_version.outputs.has_update }}
@@ -106,6 +106,7 @@ jobs:
         run: |
           cd ${{ env.SDK_PATH }}
           echo "CONFIG_PACKAGE_luci-theme-argon=m" > .config
+          echo "CONFIG_ALL=n" >> .config
           echo "CONFIG_ALL_NONSHARED=n" >> .config
           echo "CONFIG_ALL_KMODS=n" >> .config
           echo "CONFIG_AUTOREMOVE=n" >> .config

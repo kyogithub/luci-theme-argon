@@ -22,7 +22,7 @@ jobs:
   job_check:
     if: github.repository == 'kyogithub/luci-theme-argon'
     name: Check Version
-    runs-on: ubuntu-24.04-arm
+    runs-on: ubuntu-latest
     outputs:
       argon_version: ${{ steps.check_version.outputs.latest_version }}
       has_update: ${{ steps.check_version.outputs.has_update }}
@@ -38,10 +38,10 @@ jobs:
         run: |
           MAKEFILE_PATH="luci-theme-argon/Makefile"
           
-          # Obtener versión del Makefile
+          # Obtener versiï¿½n del Makefile
           latest_version=$(grep -oP 'PKG_VERSION:=\K.*' "$MAKEFILE_PATH" | sed 's/^/v/')
           
-          # Obtener última versión release
+          # Obtener ï¿½ltima versiï¿½n release
           latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "v0.0.0"')
           
           # Comparar versiones
@@ -68,14 +68,14 @@ jobs:
         with:
           fetch-depth: 1
           ref: "master"
-          
+
       - name: Install packages
         run: |
           sudo -E apt-get -qq update
           sudo -E apt-get -qq install zstd build-essential clang flex bison g++ gawk gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev python3-setuptools rsync unzip zlib1g-dev file wget
           sudo -E apt-get -qq autoremove --purge
           sudo -E apt-get -qq clean
-          
+
       - name: Setup OpenWrt SDK Cache
         id: cache-sdk
         uses: actions/cache@v5
@@ -106,6 +106,7 @@ jobs:
           EOF
           git clone -b master https://github.com/${{ github.repository }}.git package/downloads/luci-theme-argon
           ./scripts/feeds update -a
+          echo "CONFIG_PACKAGE_luci-theme-argon=m" > .config
           ./scripts/feeds install -d n luci-theme-argon
           make download -j$(nproc)
 

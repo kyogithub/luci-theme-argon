@@ -11,7 +11,7 @@ on:
     branches:
       - "master"
     paths:
-      - "luci-theme-argon/Makefile"
+      - "Makefile"
       - ".github/workflows/manual_release_apk.yml"
 env:
   TZ: Asia/Shanghai
@@ -36,7 +36,8 @@ jobs:
       - name: Check version
         id: check_version
         run: |
-          MAKEFILE_PATH="luci-theme-argon/Makefile"
+          set -o pipefail
+          MAKEFILE_PATH="Makefile"
           
           # Obtener versi�n del Makefile
           latest_version=$(grep -oP 'PKG_VERSION:=\K.*' "$MAKEFILE_PATH" | sed 's/^/v/')

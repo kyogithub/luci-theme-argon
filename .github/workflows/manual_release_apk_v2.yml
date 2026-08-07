@@ -1,0 +1,149 @@
+name: "Auto compile with OpenWrt Snapshot SDK APK"
+on:
+  repository_dispatch:
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: "SSH connection to Actions"
+        required: false
+        default: "false"
+  push:
+    branches:
+      - "master"
+    paths:
+      - "luci-theme-argon/Makefile"
+      - ".github/workflows/manual_release_apk.yml"
+env:
+  TZ: Asia/Shanghai
+  SDK_URL: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.4.0_musl.Linux-x86_64.tar.zst
+  SDK_PATH: sdk
+
+jobs:
+  job_check:
+    if: github.repository == ${{ github.repository }}
+    name: Check Version
+    runs-on: ubuntu-latest
+    outputs:
+      argon_version: ${{ steps.check_version.outputs.latest_version }}
+      has_update: ${{ steps.check_version.outputs.has_update }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: "master"
+
+      - name: Check version
+        id: check_version
+        run: |
+          MAKEFILE_PATH="luci-theme-argon/Makefile"
+          
+          # Obtener versión del Makefile
+          latest_version=$(grep -oP 'PKG_VERSION:=\K.*' "$MAKEFILE_PATH" | sed 's/^/v/')
+          
+          # Obtener última versión release
+          latest_release=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name // "v0.0.0"')
+          
+          # Comparar versiones (siempre que sean diferentes, hay update)
+          if [ "$latest_version" != "$latest_release" ]; then
+            has_update="true"
+          else
+            has_update="false"
+          fi
+          
+          echo "latest_version=${latest_version}" >> $GITHUB_OUTPUT
+          echo "has_update=${has_update}" >> $GITHUB_OUTPUT
+          echo "latest_version: ${latest_version}"
+          echo "latest_release: ${latest_release}"
+          echo "has_update: ${has_update}"
+
+      - name: Generate new tag & release
+        if: steps.check_version.outputs.has_update == 'true'
+        uses: softprops/action-gh-release@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: For openwrt official Snapshots LuCI master
+          tag_name: ${{steps.check_version.outputs.latest_version}}
+
+  job_build_argon:
+    name: Build Argon (master)
+    needs: job_check
+    if: needs.job_check.outputs.has_update == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          ref: "master"
+
+      - name: Setup OpenWrt SDK Cache
+        id: cache-sdk
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SDK_PATH }}
+          key: openwrt-sdk-snapshot-x86-64-${{ github.sha }}
+          restore-keys: |
+            openwrt-sdk-snapshot-x86-64-
+
+      - name: Download OpenWrt SDK
+        if: steps.cache-sdk.outputs.cache-hit != 'true'
+        run: |
+          echo "Downloading SDK..."
+          curl -L -o sdk.tar.zst ${{ env.SDK_URL }}
+          mkdir ${{ env.SDK_PATH }}
+          tar --zstd -xvf sdk.tar.zst -C ${{ env.SDK_PATH }} --strip-components=1
+          rm sdk.tar.zst
+          echo "SDK downloaded successfully"
+
+      - name: Setup Feeds
+        run: |
+          cd ${{ env.SDK_PATH }}
+          cat > feeds.conf << EOF
+          src-git base https://github.com/openwrt/openwrt.git;main
+          src-git-full packages https://github.com/openwrt/packages.git;master
+          src-git-full luci https://github.com/openwrt/luci.git;master
+          src-git-full routing https://git.openwrt.org/feed/routing.git;master
+          EOF
+          git clone -b master https://github.com/${{ github.repository }}.git package/downloads/luci-theme-argon
+          ./scripts/feeds update -a
+          ./scripts/feeds install -d n luci-theme-argon
+          make download -j$(nproc)
+
+      - name: Configure
+        run: |
+          cd ${{ env.SDK_PATH }}
+          echo "CONFIG_PACKAGE_luci-theme-argon=m" > .config
+          echo "CONFIG_ALL_NONSHARED=n" >> .config
+          echo "CONFIG_ALL_KMODS=n" >> .config
+          echo "CONFIG_AUTOREMOVE=n" >> .config
+          echo "CONFIG_LUCI_LANG_zh_Hans=y" >> .config
+          make defconfig
+
+      - name: Compile
+        id: compile
+        run: |
+          cd ${{ env.SDK_PATH }}
+          echo "Compiling with $(nproc) threads..."
+          make package/luci-theme-argon/{clean,compile} -j$(nproc)
+          
+          if [ -d "bin/packages/x86_64/base" ]; then
+            cp -r bin/packages/x86_64/base/* ../
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+          else
+            echo "status=failed" >> $GITHUB_OUTPUT
+            echo "FIRMWARE=" >> $GITHUB_ENV
+          fi
+          rm -f .config .config.old
+
+      - name: Upload APK to Release
+        uses: softprops/action-gh-release@v3
+        if: steps.compile.outputs.status == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{needs.job_check.outputs.argon_version}}
+          files: base/luci-theme*.apk
+          fail_on_unmatched_files: true

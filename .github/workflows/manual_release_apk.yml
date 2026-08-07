@@ -17,7 +17,7 @@ env:
 
 jobs:
   job_check:
-    if: github.repository == ${{ github.repository }}
+    if: github.repository == 'kyogithub/luci-theme-argon'
     name: Check Version
     runs-on: ubuntu-latest
     outputs:
@@ -25,7 +25,7 @@ jobs:
       has_update: ${{ steps.check_version.outputs.has_update }}
     steps:
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: "master"
@@ -112,7 +112,7 @@ jobs:
           echo "make package/luci-theme-argon/{clean,compile} -j$(nproc)"
           make package/luci-theme-argon/{clean,compile} -j$(nproc)
           mv bin/packages/x86_64/base/ ../
-          rm .config .config.old
+          rm -f .config .config.old
           cd ..
           echo "status=success" >> $GITHUB_OUTPUT
           echo "FIRMWARE=$PWD" >> $GITHUB_ENV

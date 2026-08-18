@@ -91,6 +91,7 @@ jobs:
         run: |
           echo "Downloading SDK..."
           curl -L -o sdk.tar.zst ${{ env.SDK_URL }}
+          rm -rf ${{ env.SDK_PATH }}
           mkdir ${{ env.SDK_PATH }}
           tar --zstd -xvf sdk.tar.zst -C ${{ env.SDK_PATH }} --strip-components=1
           rm sdk.tar.zst

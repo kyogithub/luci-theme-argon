@@ -100,8 +100,8 @@ jobs:
       - name: Setup Feeds
         run: |
           cd ${{ env.SDK_PATH }}
-          cat > feeds.conf << EOF
-          src-git base https://github.com/openwrt/openwrt.git;main
+          cat > feeds.conf << 'EOF'
+         # src-git base https://github.com/openwrt/openwrt.git;main
           src-git-full packages https://github.com/openwrt/packages.git;master
           src-git-full luci https://github.com/openwrt/luci.git;master
           src-git-full routing https://git.openwrt.org/feed/routing.git;master
@@ -109,7 +109,8 @@ jobs:
           git clone -b master https://github.com/${{ github.repository }}.git package/downloads/luci-theme-argon
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-theme-argon=m" > .config
-          ./scripts/feeds install -d n luci-theme-argon
+          ./scripts/feeds install -a
+          # ./scripts/feeds install -d n luci-theme-argon
           make download -j$(nproc)
 
       - name: Configure

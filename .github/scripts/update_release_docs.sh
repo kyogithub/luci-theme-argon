@@ -8,6 +8,12 @@ if [ -z "${tag}" ]; then
 	exit 1
 fi
 
+prerelease="$(python3 "$(dirname "$0")/release_metadata.py" "${tag}" --field prerelease)"
+if [ "${prerelease}" = true ]; then
+	echo "Preview release: keeping stable release documentation unchanged."
+	exit 0
+fi
+
 version="${tag#v}"
 release_date="${RELEASE_DATE:-$(date +%Y.%m.%d)}"
 pkg_release="${PKG_RELEASE_DATE:-$(date +%Y%m%d)}"
@@ -31,22 +37,11 @@ update_readme() {
 	case "${language}" in
 	en)
 		perl -0pi -e "s#The latest version is v[^ ]+ \\[Click here\\]\\[en-us-release-log\\] to view the full version history record\\.#The latest version is ${tag} [Click here][en-us-release-log] to view the full version history record.#g" "${file}"
-		perl -0pi -e 's#Replace `v[^`]+` and the package filenames above with the assets from the target \[Release\]\[release\]\.\n##g' "${file}"
 		;;
 	zh)
 		perl -0pi -e "s#当前最新的版本为 v[^ ]+ \\[点击这里\\]\\[zh-cn-release-log\\]查看完整的版本历史日志\\.#当前最新的版本为 ${tag} [点击这里][zh-cn-release-log]查看完整的版本历史日志.#g" "${file}"
-		perl -0pi -e 's#请将上面的 `v[^`]+` 和文件名替换为目标 \[Release\]\[release\] 页面中的实际附件名称。\n##g' "${file}"
 		;;
 	esac
-
-	perl -0pi -e "s#releases/download/v[^/]+/luci-theme-argon_[^[:space:])]+\\.ipk#releases/download/${tag}/luci-theme-argon_${version}-1_all.ipk#g" "${file}"
-	perl -0pi -e "s#releases/download/v[^/]+/luci-app-argon-config_[^[:space:])]+\\.ipk#releases/download/${tag}/luci-app-argon-config_${version}-1_all.ipk#g" "${file}"
-	perl -0pi -e "s#releases/download/v[^/]+/luci-theme-argon[-_][^[:space:])]+\\.apk#releases/download/${tag}/luci-theme-argon-${version}-r1.apk#g" "${file}"
-	perl -0pi -e "s#releases/download/v[^/]+/luci-app-argon-config[-_][^[:space:])]+\\.apk#releases/download/${tag}/luci-app-argon-config-${version}-r1.apk#g" "${file}"
-	perl -0pi -e "s#\./luci-theme-argon_[^[:space:])]+\\.ipk#./luci-theme-argon_${version}-1_all.ipk#g" "${file}"
-	perl -0pi -e "s#\./luci-app-argon-config_[^[:space:])]+\\.ipk#./luci-app-argon-config_${version}-1_all.ipk#g" "${file}"
-	perl -0pi -e "s#\./luci-theme-argon-[^[:space:])]+\\.apk#./luci-theme-argon-${version}-r1.apk#g" "${file}"
-	perl -0pi -e "s#\./luci-app-argon-config-[^[:space:])]+\\.apk#./luci-app-argon-config-${version}-r1.apk#g" "${file}"
 }
 
 upsert_section() {
@@ -56,14 +51,14 @@ upsert_section() {
 
 	BODY_CONTENT="$(cat "${body_file}")" HEADING="${heading}" perl -0pi -e '
 		my $heading = $ENV{HEADING};
-		my $body = $ENV{BODY_CONTENT};
+		my $body = $ENV{BODY_CONTENT} . "\n\n";
 		my $pattern = qr/^\Q$heading\E\n.*?(?=^## |\z)/ms;
 
 		if ($_ =~ $pattern) {
 			s/$pattern/$body/ms;
 		}
 		else {
-			s/\A([^\n]*\n)/$1\n$body/s;
+			s/\A([^\n]*\n)\n*/$1\n$body/s;
 		}
 	' "${file}"
 }

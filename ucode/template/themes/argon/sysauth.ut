@@ -25,8 +25,17 @@
 {%
 	import * as fs from 'fs';
 	import { cursor } from 'uci';
+	import { get_branding } from 'luci.argon-branding';
 
 	let cfg = cursor();
+	// Only known layouts may select login page styles; old configs stay classic.
+	let login_style = 'classic';
+	if (fs.access('/etc/config/argon')) {
+		let configured_style = cfg.get_first('argon', 'global', 'login_style');
+		if (configured_style == 'classic' || configured_style == 'centered')
+			login_style = configured_style;
+	}
+
 	// Per-request pseudo-random state for selecting local backgrounds.
 	let lcgState = (+time()) % 2147483648;
 
@@ -90,10 +99,12 @@
 	const hostname = striptags(boardinfo?.hostname ?? '?');
 	const themeDir = media + "/background/";
 	const bgArry = selectBackground(themeDir);
+	const branding = get_branding();
+	const logo_url = branding.logo ? media + '/branding/' + branding.logo : media + '/img/argon.svg';
 
 %}
 <!-- Login Page Start -->
-<div class="login-page">
+<div class="login-page" data-login-style="{{ login_style }}">
 	{% if ( bgArry.backgroundType == "Video" ): %}
 	<!-- Video Player Start -->
 	<div class="video">
@@ -143,7 +154,7 @@
 	<div class="login-container">
 		<div class="login-form">
 			<!-- Logo Start -->
-			<a class="brand" href="/"><img src="{{ media }}/img/argon.svg" class="icon">
+			<a class="brand" href="/"><img src="{{ logo_url }}" class="icon" alt="" data-fallback="{{ media }}/img/argon.svg" onerror="this.onerror=null;this.src=this.dataset.fallback">
 				<span class="brand-text">{{ hostname }}</span>
 			</a>
 			<!-- Logo End -->

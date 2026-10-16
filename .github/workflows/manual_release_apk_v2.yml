@@ -12,10 +12,9 @@ on:
       - "master"
     paths:
       - "Makefile"
-      - ".github/workflows/manual_release_apk.yml"
+      - ".github/workflows/manual_release_apk_v2.yml"
 env:
-  TZ: Asia/Shanghai
-  SDK_URL: https://downloads.openwrt.org/snapshots/targets/x86/64/openwrt-sdk-x86-64_gcc-14.4.0_musl.Linux-x86_64.tar.zst
+  SDK_URL: https://downloads.openwrt.org/releases/25.12.5/targets/x86/64/openwrt-sdk-25.12.5-x86-64_gcc-14.3.0_musl.Linux-x86_64.tar.zst
   SDK_PATH: sdk
 
 jobs:
@@ -84,7 +83,7 @@ jobs:
           path: ${{ env.SDK_PATH }}
           key: openwrt-sdk-snapshot-x86-64-${{ github.sha }}
           restore-keys: |
-            openwrt-sdk-snapshot-x86-64-
+            openwrt-sdk-snapshot-x86-64-${{ github.sha }}
 
       - name: Download OpenWrt SDK
         if: steps.cache-sdk.outputs.cache-hit != 'true'
@@ -101,6 +100,7 @@ jobs:
         run: |
           cd ${{ env.SDK_PATH }}
           cat > feeds.conf << 'EOF'
+          src-git base https://github.com/openwrt/openwrt.git;main
           src-git-full packages https://github.com/openwrt/packages.git;master
           src-git-full luci https://github.com/openwrt/luci.git;master
           src-git-full routing https://git.openwrt.org/feed/routing.git;master
@@ -108,7 +108,7 @@ jobs:
           git clone -b master https://github.com/${{ github.repository }}.git package/downloads/luci-theme-argon
           ./scripts/feeds update -a
           echo "CONFIG_PACKAGE_luci-theme-argon=m" > .config
-          ./scripts/feeds install -a
+          ./scripts/feeds install -d n luci-theme-argon
           make download -j$(nproc)
 
       - name: Configure
